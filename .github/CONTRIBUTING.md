@@ -1,4 +1,4 @@
-# Contributing to Soenneker.Html.Parser
+﻿# Contributing to Soenneker.Html.Parser
 
 We're excited that you're interested in contributing!
 
