@@ -42,7 +42,7 @@
     
     <ItemGroup>
       <PackageReference Include="HtmlAgilityPack" Version="1.12.4" />
-      <PackageReference Include="Soenneker.Extensions.String" Version="4.0.585" />
+      <PackageReference Include="Soenneker.Extensions.String" Version="4.0.589" />
       <PackageReference Include="Soenneker.Html.Client" Version="4.0.881" />
     </ItemGroup>
 </Project>
