@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Html.Parser.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Html.Parser\Soenneker.Html.Parser.csproj" />
     </ItemGroup>
 
     <ItemGroup>
