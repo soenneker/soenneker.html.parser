@@ -27,7 +27,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     public async ValueTask<List<string>> GetAllAnchors(string uri, CancellationToken cancellationToken = default)
     {
         HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
-            .ConfigureAwait(false);
+            .NoSync();
         return GetAllAnchorsFromDocument(doc);
     }
 
@@ -44,7 +44,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     {
         // Regex requires the HTML string, so download once; parse is not needed here.
         string content = await DownloadHtml(uri, cancellationToken)
-            .ConfigureAwait(false);
+            .NoSync();
         return GetAllImageUrlsViaRegexFromHtml(content);
     }
 
@@ -68,7 +68,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     public async ValueTask<List<string>> GetAllUrlsFromImgTags(string uri, CancellationToken cancellationToken = default)
     {
         HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
-            .ConfigureAwait(false);
+            .NoSync();
         return GetAllUrlsFromImgTagsFromDocument(doc, uri);
     }
 
@@ -87,7 +87,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     public async ValueTask<(List<string> Anchors, List<string> ImageUrls)> GetAnchorsAndImageUrls(string uri, CancellationToken cancellationToken = default)
     {
         HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
-            .ConfigureAwait(false);
+            .NoSync();
         return (GetAllAnchorsFromDocument(doc), GetAllUrlsFromImgTagsFromDocument(doc, uri));
     }
 
@@ -99,6 +99,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         foreach (HtmlNode a in doc.DocumentNode.Descendants("a"))
         {
             string? href = a.GetAttributeValue("href", null);
+
             if (!href.IsNullOrWhiteSpace())
                 unique.Add(href);
         }
@@ -140,7 +141,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     private async ValueTask<HtmlDocument> DownloadAndParse(string uri, CancellationToken cancellationToken)
     {
         string html = await DownloadHtml(uri, cancellationToken)
-            .ConfigureAwait(false);
+            .NoSync();
         return ParseHtml(html);
     }
 
