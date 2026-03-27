@@ -67,7 +67,7 @@ public interface IHtmlParserUtil
 
     ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default);
 
-    ValueTask<IDocument> ParseHtml(string html, CancellationToken cancellationToken = default);
+    ValueTask<IDocument> Parse(string html, CancellationToken cancellationToken = default);
 
     ValueTask<string> DownloadHtml(string uri, CancellationToken cancellationToken = default);
 }
