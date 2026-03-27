@@ -41,7 +41,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         if (content.IsNullOrEmpty())
             return [];
 
-        IDocument document = await ParseHtml(content, cancellationToken)
+        IDocument document = await Parse(content, cancellationToken)
             .NoSync();
 
         return GetAllAnchorsFromDocument(document);
@@ -84,7 +84,7 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         if (content.IsNullOrEmpty())
             return [];
 
-        IDocument document = await ParseHtml(content, cancellationToken)
+        IDocument document = await Parse(content, cancellationToken)
             .NoSync();
 
         return GetAllUrlsFromImgTagsFromDocument(document, baseUriString);
@@ -151,11 +151,11 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         string html = await DownloadHtml(uri, cancellationToken)
             .NoSync();
 
-        return await ParseHtml(html, cancellationToken)
+        return await Parse(html, cancellationToken)
             .NoSync();
     }
 
-    public async ValueTask<IDocument> ParseHtml(string html, CancellationToken cancellationToken = default)
+    public async ValueTask<IDocument> Parse(string html, CancellationToken cancellationToken = default)
     {
         HtmlParser parser = await _angleSharpParser.Get(cancellationToken)
                                                    .NoSync();
