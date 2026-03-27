@@ -4,7 +4,9 @@ using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using HtmlAgilityPack;
+using AngleSharp.Dom;
+using AngleSharp.Html.Parser;
+using Soenneker.AngleSharp.Parser.Abstract;
 using Soenneker.Extensions.String;
 using Soenneker.Extensions.Task;
 using Soenneker.Extensions.ValueTask;
@@ -18,33 +20,38 @@ namespace Soenneker.Html.Parser;
 public sealed class HtmlParserUtil : IHtmlParserUtil
 {
     private readonly IHtmlClient _htmlClient;
+    private readonly IAngleSharpParser _angleSharpParser;
 
-    public HtmlParserUtil(IHtmlClient htmlClient)
+    public HtmlParserUtil(IHtmlClient htmlClient, IAngleSharpParser angleSharpParser)
     {
         _htmlClient = htmlClient;
+        _angleSharpParser = angleSharpParser;
     }
 
     public async ValueTask<List<string>> GetAllAnchors(string uri, CancellationToken cancellationToken = default)
     {
-        HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
+        IDocument document = await DownloadAndParse(uri, cancellationToken)
             .NoSync();
-        return GetAllAnchorsFromDocument(doc);
+
+        return GetAllAnchorsFromDocument(document);
     }
 
-    public List<string> GetAllAnchorsFromHtml(string content)
+    public async ValueTask<List<string>> GetAllAnchorsFromHtml(string content, CancellationToken cancellationToken = default)
     {
         if (content.IsNullOrEmpty())
             return [];
 
-        HtmlDocument doc = ParseHtml(content);
-        return GetAllAnchorsFromDocument(doc);
+        IDocument document = await ParseHtml(content, cancellationToken)
+            .NoSync();
+
+        return GetAllAnchorsFromDocument(document);
     }
 
     public async ValueTask<List<string>> GetAllImageUrlsViaRegex(string uri, CancellationToken cancellationToken = default)
     {
-        // Regex requires the HTML string, so download once; parse is not needed here.
         string content = await DownloadHtml(uri, cancellationToken)
             .NoSync();
+
         return GetAllImageUrlsViaRegexFromHtml(content);
     }
 
@@ -58,27 +65,29 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
 
         foreach (ValueMatch m in regex.EnumerateMatches(content))
         {
-            // Must allocate string for return type
             unique.Add(content.Substring(m.Index, m.Length));
         }
 
-        return unique.Count == 0 ? [] : [..unique];
+        return unique.Count == 0 ? [] : [.. unique];
     }
 
     public async ValueTask<List<string>> GetAllUrlsFromImgTags(string uri, CancellationToken cancellationToken = default)
     {
-        HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
+        IDocument document = await DownloadAndParse(uri, cancellationToken)
             .NoSync();
-        return GetAllUrlsFromImgTagsFromDocument(doc, uri);
+
+        return GetAllUrlsFromImgTagsFromDocument(document, uri);
     }
 
-    public List<string> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString)
+    public async ValueTask<List<string>> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString, CancellationToken cancellationToken = default)
     {
         if (content.IsNullOrEmpty())
             return [];
 
-        HtmlDocument doc = ParseHtml(content);
-        return GetAllUrlsFromImgTagsFromDocument(doc, baseUriString);
+        IDocument document = await ParseHtml(content, cancellationToken)
+            .NoSync();
+
+        return GetAllUrlsFromImgTagsFromDocument(document, baseUriString);
     }
 
     /// <summary>
@@ -86,28 +95,28 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     /// </summary>
     public async ValueTask<(List<string> Anchors, List<string> ImageUrls)> GetAnchorsAndImageUrls(string uri, CancellationToken cancellationToken = default)
     {
-        HtmlDocument doc = await DownloadAndParse(uri, cancellationToken)
+        IDocument document = await DownloadAndParse(uri, cancellationToken)
             .NoSync();
-        return (GetAllAnchorsFromDocument(doc), GetAllUrlsFromImgTagsFromDocument(doc, uri));
+
+        return (GetAllAnchorsFromDocument(document), GetAllUrlsFromImgTagsFromDocument(document, uri));
     }
 
-    private static List<string> GetAllAnchorsFromDocument(HtmlDocument doc)
+    private static List<string> GetAllAnchorsFromDocument(IDocument document)
     {
-        // DOM walk > XPath
         var unique = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (HtmlNode a in doc.DocumentNode.Descendants("a"))
+        foreach (IElement anchor in document.QuerySelectorAll("a[href]"))
         {
-            string? href = a.GetAttributeValue("href", null);
+            string? href = anchor.GetAttribute("href");
 
             if (!href.IsNullOrWhiteSpace())
                 unique.Add(href);
         }
 
-        return unique.Count == 0 ? [] : [..unique];
+        return unique.Count == 0 ? [] : [.. unique];
     }
 
-    private static List<string> GetAllUrlsFromImgTagsFromDocument(HtmlDocument doc, string baseUriString)
+    private static List<string> GetAllUrlsFromImgTagsFromDocument(IDocument document, string baseUriString)
     {
         if (baseUriString.IsNullOrWhiteSpace())
             return [];
@@ -117,45 +126,48 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
 
         var unique = new HashSet<string>(StringComparer.Ordinal);
 
-        foreach (HtmlNode img in doc.DocumentNode.Descendants("img"))
+        foreach (IElement image in document.QuerySelectorAll("img[src]"))
         {
-            string? src = img.GetAttributeValue("src", null);
+            string? src = image.GetAttribute("src");
+
             if (src.IsNullOrEmpty())
                 continue;
 
-            // Absolute?
-            if (Uri.TryCreate(src, UriKind.Absolute, out Uri? abs))
+            if (Uri.TryCreate(src, UriKind.Absolute, out Uri? absoluteUri))
             {
-                unique.Add(abs.ToString());
+                unique.Add(absoluteUri.ToString());
                 continue;
             }
 
-            // Relative -> resolve
-            if (Uri.TryCreate(baseUri, src, out Uri? resolved))
-                unique.Add(resolved.ToString());
+            if (Uri.TryCreate(baseUri, src, out Uri? resolvedUri))
+                unique.Add(resolvedUri.ToString());
         }
 
-        return unique.Count == 0 ? [] : [..unique];
+        return unique.Count == 0 ? [] : [.. unique];
     }
 
-    private async ValueTask<HtmlDocument> DownloadAndParse(string uri, CancellationToken cancellationToken)
+    public async ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default)
     {
         string html = await DownloadHtml(uri, cancellationToken)
             .NoSync();
-        return ParseHtml(html);
+
+        return await ParseHtml(html, cancellationToken)
+            .NoSync();
     }
 
-    private static HtmlDocument ParseHtml(string html)
+    public async ValueTask<IDocument> ParseHtml(string html, CancellationToken cancellationToken = default)
     {
-        var doc = new HtmlDocument();
-        doc.LoadHtml(html);
-        return doc;
+        HtmlParser parser = await _angleSharpParser.Get(cancellationToken)
+                                                   .NoSync();
+
+        return await parser.ParseDocumentAsync(html, cancellationToken);
     }
 
-    private async ValueTask<string> DownloadHtml(string uri, CancellationToken cancellationToken)
+    public async ValueTask<string> DownloadHtml(string uri, CancellationToken cancellationToken = default)
     {
         HttpClient client = await _htmlClient.Get(cancellationToken)
                                              .NoSync();
+
         return await client.GetStringAsync(uri, cancellationToken)
                            .NoSync();
     }

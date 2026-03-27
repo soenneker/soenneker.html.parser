@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Soenneker.AngleSharp.Parser.Registrars;
 using Soenneker.Html.Client.Registrars;
 using Soenneker.Html.Parser.Abstract;
 
@@ -15,7 +16,8 @@ public static class HtmlParserUtilRegistrar
     /// </summary>
     public static IServiceCollection AddHtmlParserUtilAsSingleton(this IServiceCollection services)
     {
-        services.AddHtmlClientAsSingleton();
+        services.AddHtmlClientAsSingleton()
+                .AddAngleSharpParserAsSingleton();
         services.TryAddSingleton<IHtmlParserUtil, HtmlParserUtil>();
         return services;
     }
@@ -25,7 +27,8 @@ public static class HtmlParserUtilRegistrar
     /// </summary>
     public static IServiceCollection AddHtmlParserUtilAsScoped(this IServiceCollection services)
     {
-        services.AddHtmlClientAsScoped();
+        services.AddHtmlClientAsScoped()
+                .AddAngleSharpParserAsScoped();
         services.TryAddScoped<IHtmlParserUtil, HtmlParserUtil>();
         return services;
     }

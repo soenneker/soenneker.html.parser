@@ -1,3 +1,4 @@
+using AngleSharp.Dom;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
@@ -23,9 +24,10 @@ public interface IHtmlParserUtil
     /// Retrieves all unique anchor URLs from the provided HTML content.
     /// </summary>
     /// <param name="content">The HTML content to parse.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A list of unique anchor URLs found in the HTML content.</returns>
     [Pure]
-    List<string> GetAllAnchorsFromHtml(string content);
+    ValueTask<List<string>> GetAllAnchorsFromHtml(string content, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asynchronously retrieves all unique image URLs from the specified URI using a regular expression.
@@ -58,7 +60,14 @@ public interface IHtmlParserUtil
     /// </summary>
     /// <param name="content">The HTML content to parse.</param>
     /// <param name="baseUriString">The base URI to resolve relative URLs.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A list of unique image URLs from img tags found in the HTML content.</returns>
     [Pure]
-    List<string> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString);
+    ValueTask<List<string>> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString, CancellationToken cancellationToken = default);
+
+    ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default);
+
+    ValueTask<IDocument> ParseHtml(string html, CancellationToken cancellationToken = default);
+
+    ValueTask<string> DownloadHtml(string uri, CancellationToken cancellationToken = default);
 }
