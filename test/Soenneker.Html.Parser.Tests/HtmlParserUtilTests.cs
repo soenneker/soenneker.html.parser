@@ -1,20 +1,19 @@
 using Soenneker.Html.Parser.Abstract;
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Html.Parser.Tests;
 
-[Collection("Collection")]
-public class HtmlParserUtilTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public class HtmlParserUtilTests : HostedUnitTest
 {
     private readonly IHtmlParserUtil _util;
 
-    public HtmlParserUtilTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public HtmlParserUtilTests(Host host) : base(host)
     {
         _util = Resolve<IHtmlParserUtil>(true);
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 
