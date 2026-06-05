@@ -65,9 +65,27 @@ public interface IHtmlParserUtil
     [Pure]
     ValueTask<List<string>> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Executes the download and parse operation.
+    /// </summary>
+    /// <param name="uri">The uri.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task containing the result of the operation.</returns>
     ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Executes the parse operation.
+    /// </summary>
+    /// <param name="html">The html.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task containing the result of the operation.</returns>
     ValueTask<IDocument> Parse(string html, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Executes the download html operation.
+    /// </summary>
+    /// <param name="uri">The uri.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>A task containing the result of the operation.</returns>
     ValueTask<string> DownloadHtml(string uri, CancellationToken cancellationToken = default);
 }
