@@ -46,6 +46,6 @@
     <ItemGroup>
         <PackageReference Include="Soenneker.AngleSharp.Parser" Version="4.0.22" />
         <PackageReference Include="Soenneker.Extensions.String" Version="4.0.687" />
-        <PackageReference Include="Soenneker.Html.Client" Version="4.0.1012" />
+        <PackageReference Include="Soenneker.Html.Client" Version="4.0.1013" />
     </ItemGroup>
 </Project>
