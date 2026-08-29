@@ -93,6 +93,9 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
     /// <summary>
     /// Downloads the HTML once, parses once, and extracts both anchors and image URLs from img[src].
     /// </summary>
+    /// <param name="uri">Receives the normalized absolute URI when parsing succeeds.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>A task whose result is the requested (List Image Urls).</returns>
     public async ValueTask<(List<string> Anchors, List<string> ImageUrls)> GetAnchorsAndImageUrls(string uri, CancellationToken cancellationToken = default)
     {
         IDocument document = await DownloadAndParse(uri, cancellationToken)

@@ -14,6 +14,8 @@ public static class HtmlParserUtilRegistrar
     /// <summary>
     /// Adds <see cref="IHtmlParserUtil"/> as a singleton service. <para/>
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddHtmlParserUtilAsSingleton(this IServiceCollection services)
     {
         services.AddHtmlClientAsSingleton()
@@ -25,6 +27,8 @@ public static class HtmlParserUtilRegistrar
     /// <summary>
     /// Adds <see cref="IHtmlParserUtil"/> as a scoped service. <para/>
     /// </summary>
+    /// <param name="services">Service collection that receives the registration.</param>
+    /// <returns>The same service collection, so additional registrations can be chained.</returns>
     public static IServiceCollection AddHtmlParserUtilAsScoped(this IServiceCollection services)
     {
         services.AddHtmlClientAsScoped()
