@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Soenneker.Html.Parser.Abstract;
 using Soenneker.Tests.HostedUnit;
 
@@ -17,5 +19,23 @@ public class HtmlParserUtilTests : HostedUnitTest
     public void Default()
     {
 
+    }
+
+    [Test]
+    public async Task Image_extraction_resolves_relative_urls_and_ignores_non_http_schemes()
+    {
+        const string html = """
+            <img src="/images/logo.png">
+            <img src="https://cdn.example.com/photo.webp">
+            <img src="data:image/png;base64,abc">
+            <img src="javascript:alert(1)">
+            """;
+
+        List<string> urls = await _util.GetAllUrlsFromImgTagsFromHtml(html, "https://example.com/products/");
+
+        await Assert.That(urls).IsEquivalentTo([
+            "https://example.com/images/logo.png",
+            "https://cdn.example.com/photo.webp"
+        ]);
     }
 }

@@ -16,7 +16,6 @@ using Soenneker.Html.Parser.Utils;
 
 namespace Soenneker.Html.Parser;
 
-/// <inheritdoc cref="IHtmlParserUtil"/>
 public sealed class HtmlParserUtil : IHtmlParserUtil
 {
     private readonly IHtmlClient _htmlClient;
@@ -90,12 +89,6 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         return GetAllUrlsFromImgTagsFromDocument(document, baseUriString);
     }
 
-    /// <summary>
-    /// Downloads the HTML once, parses once, and extracts both anchors and image URLs from img[src].
-    /// </summary>
-    /// <param name="uri">Receives the normalized absolute URI when parsing succeeds.</param>
-    /// <param name="cancellationToken">Token used to cancel the operation.</param>
-    /// <returns>A task whose result is the requested (List Image Urls).</returns>
     public async ValueTask<(List<string> Anchors, List<string> ImageUrls)> GetAnchorsAndImageUrls(string uri, CancellationToken cancellationToken = default)
     {
         IDocument document = await DownloadAndParse(uri, cancellationToken)
@@ -138,16 +131,20 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
 
             if (Uri.TryCreate(src, UriKind.Absolute, out Uri? absoluteUri))
             {
-                unique.Add(absoluteUri.ToString());
+                if (IsHttpUri(absoluteUri))
+                    unique.Add(absoluteUri.ToString());
+
                 continue;
             }
 
-            if (Uri.TryCreate(baseUri, src, out Uri? resolvedUri))
+            if (Uri.TryCreate(baseUri, src, out Uri? resolvedUri) && IsHttpUri(resolvedUri))
                 unique.Add(resolvedUri.ToString());
         }
 
         return unique.Count == 0 ? [] : [.. unique];
     }
+
+    private static bool IsHttpUri(Uri uri) => uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps;
 
     public async ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default)
     {

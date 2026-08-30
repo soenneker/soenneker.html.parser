@@ -1,11 +1,12 @@
 [![](https://img.shields.io/nuget/v/soenneker.html.parser.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.html.parser/)
+[![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.html.parser/build-and-test.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.html.parser/actions/workflows/build-and-test.yml)
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.html.parser/publish-package.yml?style=for-the-badge)](https://github.com/soenneker/soenneker.html.parser/actions/workflows/publish-package.yml)
 [![](https://img.shields.io/nuget/dt/soenneker.html.parser.svg?style=for-the-badge)](https://www.nuget.org/packages/soenneker.html.parser/)
 [![](https://img.shields.io/github/actions/workflow/status/soenneker/soenneker.html.parser/codeql.yml?label=CodeQL&style=for-the-badge)](https://github.com/soenneker/soenneker.html.parser/actions/workflows/codeql.yml)
 
 # Soenneker.Html.Parser
 
-A utility library for HTML parsing related operations.
+Downloads and parses HTML with AngleSharp, with helpers for extracting anchors and image URLs.
 
 ## Install
 
@@ -13,37 +14,56 @@ A utility library for HTML parsing related operations.
 dotnet add package Soenneker.Html.Parser
 ```
 
-## Quick start
+## Register
 
 ```csharp
 using Soenneker.Html.Parser.Registrars;
-using Microsoft.Extensions.DependencyInjection;
 
-var services = new ServiceCollection();
-var result = services.AddHtmlParserUtilAsSingleton();
+services.AddHtmlParserUtilAsSingleton();
 ```
 
-Adds `IHtmlParserUtil` as a singleton service.
+Use `AddHtmlParserUtilAsScoped()` when the parser and its HTTP client should be owned by a dependency-injection scope.
 
-## What you get
+## Parse HTML
 
-- `IHtmlParserUtil` — A utility library for HTML parsing related operations.
-- `HtmlParserUtilRegistrar` — A utility library for HTML parsing related operations.
+```csharp
+using AngleSharp.Dom;
+using Soenneker.Html.Parser.Abstract;
 
-## API at a glance
+IDocument document = await parser.Parse(html, cancellationToken);
 
-| API | What it does | Result / important behavior |
-| --- | --- | --- |
-| `IHtmlParserUtil.GetAllAnchors(uri, cancellationToken)` | Asynchronously retrieves all unique anchor URLs from the specified URI. | A task representing the asynchronous operation, with a list of unique anchor URLs found on the page. |
-| `IHtmlParserUtil.GetAllAnchorsFromHtml(content, cancellationToken)` | Retrieves all Anchors From HTML. | A list of unique anchor URLs found in the HTML content. |
-| `IHtmlParserUtil.GetAllImageUrlsViaRegex(uri, cancellationToken)` | Asynchronously retrieves all unique image URLs from the specified URI using a regular expression. | A task representing the asynchronous operation, with a list of unique image URLs found on the page. |
-| `IHtmlParserUtil.GetAllImageUrlsViaRegexFromHtml(content)` | Retrieves all Image Urls Via Regex From HTML. | A list of unique image URLs found in the HTML content. |
-| `IHtmlParserUtil.GetAllUrlsFromImgTags(uri, cancellationToken)` | Asynchronously retrieves all unique image URLs from img tags in the specified URI, resolving relative URLs. | A task whose result contains the unique image URLs found in `img` tags on the page. |
-| `IHtmlParserUtil.GetAllUrlsFromImgTagsFromHtml(content, baseUriString, cancellationToken)` | Retrieves all unique image URLs from img tags in the provided HTML content, resolving relative URLs based on a base URI. | A list of unique image URLs from img tags found in the HTML content. |
-| `IHtmlParserUtil.DownloadHtml(uri, cancellationToken)` | Downloads HTML. | A task whose result is the text returned by download HTML. |
-| `HtmlParserUtilRegistrar.AddHtmlParserUtilAsSingleton(services)` | Adds `IHtmlParserUtil` as a singleton service. | The same service collection, so additional registrations can be chained. |
-| `HtmlParserUtilRegistrar.AddHtmlParserUtilAsScoped(services)` | Adds `IHtmlParserUtil` as a scoped service. | The same service collection, so additional registrations can be chained. |
+string? title = document.QuerySelector("title")?.TextContent;
+IElement? heading = document.QuerySelector("main h1");
+```
 
-## Practical notes
+AngleSharp parses with browser-style error recovery, so malformed markup may produce a repaired document rather than an exception.
 
-- Cancellation stops pending work; it does not undo work that has already completed.
+## Download and extract links
+
+```csharp
+List<string> anchors = await parser.GetAllAnchors(
+    "https://example.com/docs",
+    cancellationToken);
+
+(List<string> pageAnchors, List<string> images) =
+    await parser.GetAnchorsAndImageUrls(
+        "https://example.com/docs",
+        cancellationToken);
+```
+
+Anchor helpers return unique, non-empty `href` strings exactly as written in the document; relative links are not resolved. The combined helper downloads and parses the page once.
+
+## Extract image URLs from existing HTML
+
+```csharp
+List<string> images = await parser.GetAllUrlsFromImgTagsFromHtml(
+    html,
+    "https://example.com/catalog/",
+    cancellationToken);
+```
+
+This reads `img[src]`, resolves relative values against the base URI, and returns unique HTTP(S) URLs. Data, JavaScript, file, and other schemes are ignored.
+
+`GetAllImageUrlsViaRegexFromHtml()` is a separate text scan for absolute HTTP(S) image URLs ending in a common image extension. It does not understand HTML, resolve relative paths, inspect `srcset`, or retain query strings after the extension; prefer the DOM-based helper for normal pages.
+
+The download APIs use `HttpClient.GetStringAsync`, require a successful response, and buffer the response body as a string. Do not expose arbitrary user-supplied URLs to these methods without applying your application's SSRF controls.

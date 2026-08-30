@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Soenneker.Html.Parser.Abstract;
 
 /// <summary>
-/// A utility library for HTML parsing related operations
+/// Downloads and parses HTML, then extracts links and image URLs.
 /// </summary>
 public interface IHtmlParserUtil
 {
@@ -66,7 +66,15 @@ public interface IHtmlParserUtil
     ValueTask<List<string>> GetAllUrlsFromImgTagsFromHtml(string content, string baseUriString, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Downloads and Parse for the html parser.
+    /// Downloads and parses a page once, returning its unique raw anchor targets and resolved HTTP(S) image URLs.
+    /// </summary>
+    /// <param name="uri">The absolute HTTP(S) page URI, also used to resolve relative image sources.</param>
+    /// <param name="cancellationToken">Stops the download or parsing operation.</param>
+    /// <returns>The anchor <c>href</c> values and resolved image URLs found in the document.</returns>
+    ValueTask<(List<string> Anchors, List<string> ImageUrls)> GetAnchorsAndImageUrls(string uri, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Downloads an HTML document and parses it with AngleSharp.
     /// </summary>
     /// <param name="uri">Receives the normalized absolute URI when parsing succeeds.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
@@ -74,7 +82,7 @@ public interface IHtmlParserUtil
     ValueTask<IDocument> DownloadAndParse(string uri, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Parses html parser for the html parser.
+    /// Parses HTML as a document with AngleSharp's error recovery.
     /// </summary>
     /// <param name="html">Rendered page HTML to inspect.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
@@ -82,7 +90,7 @@ public interface IHtmlParserUtil
     ValueTask<IDocument> Parse(string html, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Downloads HTML.
+    /// Downloads HTML and requires a successful HTTP response.
     /// </summary>
     /// <param name="uri">Receives the normalized absolute URI when parsing succeeds.</param>
     /// <param name="cancellationToken">Token used to cancel the operation.</param>
