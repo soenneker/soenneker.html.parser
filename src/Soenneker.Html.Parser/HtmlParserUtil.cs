@@ -129,11 +129,9 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
             if (src.IsNullOrEmpty())
                 continue;
 
-            if (Uri.TryCreate(src, UriKind.Absolute, out Uri? absoluteUri))
+            if (Uri.TryCreate(src, UriKind.Absolute, out Uri? absoluteUri) && IsHttpUri(absoluteUri))
             {
-                if (IsHttpUri(absoluteUri))
-                    unique.Add(absoluteUri.ToString());
-
+                unique.Add(absoluteUri.ToString());
                 continue;
             }
 
