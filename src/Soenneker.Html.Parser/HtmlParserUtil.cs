@@ -16,6 +16,7 @@ using Soenneker.Html.Parser.Utils;
 
 namespace Soenneker.Html.Parser;
 
+/// <inheritdoc cref="IHtmlParserUtil" />
 public sealed class HtmlParserUtil : IHtmlParserUtil
 {
     private readonly IHtmlClient _htmlClient;
