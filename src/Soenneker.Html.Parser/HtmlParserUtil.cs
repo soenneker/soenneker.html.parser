@@ -63,9 +63,10 @@ public sealed class HtmlParserUtil : IHtmlParserUtil
         Regex regex = UrlExtractor.ImageUrlRegex();
         var unique = new HashSet<string>(StringComparer.Ordinal);
 
+        HashSet<string>.AlternateLookup<ReadOnlySpan<char>> lookup = unique.GetAlternateLookup<ReadOnlySpan<char>>();
         foreach (ValueMatch m in regex.EnumerateMatches(content))
         {
-            unique.Add(content.Substring(m.Index, m.Length));
+            lookup.Add(content.AsSpan(m.Index, m.Length));
         }
 
         return unique.Count == 0 ? [] : [.. unique];
