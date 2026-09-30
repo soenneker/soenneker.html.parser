@@ -23,7 +23,7 @@ public class HtmlParserUtilTests : HostedUnitTest
     }
 
     [Test]
-    public async Task Image_extraction_resolves_relative_urls_and_ignores_non_http_schemes(CancellationToken cancellationToken)
+    public async ValueTask Image_extraction_resolves_relative_urls_and_ignores_non_http_schemes(CancellationToken cancellationToken)
     {
         const string html = """
             <img src="/images/logo.png">
